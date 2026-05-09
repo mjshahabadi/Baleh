@@ -6,7 +6,7 @@ connection_string = (
     f"DRIVER={Config.DB_DRIVER};"
     f"SERVER={Config.DB_SERVER};DATABASE={Config.DB_NAME};UID={Config.DB_USER};PWD={Config.DB_PASSWORD};"
 )
-print(connection_string)
+print(connection_string) 
 
 
 # 🔐 encode برای SQLAlchemy
