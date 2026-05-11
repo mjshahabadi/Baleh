@@ -2,90 +2,86 @@ from collections import defaultdict
 
 
 # =========================================================
+# HELPERS
+# =========================================================
+def _button_value(btn, key, tuple_index=None, default=None):
+    if isinstance(btn, dict):
+        return btn.get(key, default)
+
+    if isinstance(btn, (list, tuple)) and tuple_index is not None:
+        if len(btn) > tuple_index:
+            return btn[tuple_index]
+
+    return default
+
+
+def _button_label(btn):
+    title = (
+        _button_value(btn, "button_text", 0)
+        or _button_value(btn, "text", 0)
+        or ""
+    )
+    icon = _button_value(btn, "icon", 1, "") or ""
+
+    return f"{icon} {title}" if icon else str(title)
+
+
+def _button_row(btn):
+    return int(
+        _button_value(btn, "row", default=None)
+        if _button_value(btn, "row", default=None) is not None
+        else _button_value(btn, "row_index", 3, 0) or 0
+    )
+
+
+def _button_col(btn):
+    return int(
+        _button_value(btn, "col", default=None)
+        if _button_value(btn, "col", default=None) is not None
+        else _button_value(btn, "col_index", 4, 0) or 0
+    )
+
+
+def _button_callback(btn):
+    return (
+        _button_value(btn, "callback_data", 2)
+        or _button_value(btn, "action", 2)
+        or ""
+    )
+
+
+# =========================================================
 # INLINE
 # =========================================================
-from collections import defaultdict
-
 def build_inline_keyboard(buttons):
 
-    keyboard = {}
+    rows = defaultdict(list)
 
     for btn in buttons:
-
-        # ==========================================
-        # SAFE PARSING (FIX CRASH)
-        # ==========================================
-        if isinstance(btn, dict):
-
-            title = btn.get("button_text") or btn.get("text")
-            icon = btn.get("icon", "")
-            action = btn.get("callback_data", "")
-            row = btn.get("row_index", 0)
-            col = btn.get("col_index", 0)
-
-        elif isinstance(btn, (list, tuple)):
-
-            # old format support
-            if len(btn) < 3:
-                continue
-
-            title = btn[0]
-            icon = btn[1] if len(btn) > 1 else ""
-            action = btn[2] if len(btn) > 2 else ""
-            row = btn[3] if len(btn) > 3 else 0
-            col = btn[4] if len(btn) > 4 else 0
-
-        else:
+        text = _button_label(btn)
+        if not text:
             continue
 
-        text = f"{icon} {title}" if icon else title
-
-        keyboard.setdefault(row, []).append({
+        rows[_button_row(btn)].append({
             "text": text,
-            "callback_data": action,
-            "col": col
+            "callback_data": str(_button_callback(btn)),
+            "col": _button_col(btn),
         })
-
-    # sort rows
-    result = []
-
-    for r in sorted(keyboard.keys()):
-
-        row_buttons = sorted(keyboard[r], key=lambda x: x["col"])
-
-        result.append([
-            {
-                "text": b["text"],
-                "callback_data": b["callback_data"]
-            }
-            for b in row_buttons
-        ])
-
-    return {"inline_keyboard": result}
-
-def build_reply_keyboard(buttons):
-
-    rows = {}
-
-    for btn in buttons:
-
-        title, icon, action, row, col, *_ = btn
-
-        text = f"{icon} {title}" if icon else title
-
-        rows.setdefault(row, []).append(text)
 
     keyboard = []
 
-    for r in sorted(rows):
+    for row in sorted(rows.keys()):
+        row_buttons = sorted(rows[row], key=lambda item: item["col"])
+        keyboard.append([
+            {
+                "text": button["text"],
+                "callback_data": button["callback_data"],
+            }
+            for button in row_buttons
+        ])
 
-        keyboard.append(rows[r])
+    return {"inline_keyboard": keyboard}
 
-    return {
-        "keyboard": keyboard,
-        "resize_keyboard": True,
-        "one_time_keyboard": False
-    }
 
 # =========================================================
 # REPLY
@@ -95,35 +91,25 @@ def build_reply_keyboard(buttons):
     rows = defaultdict(list)
 
     for btn in buttons:
+        text = _button_label(btn)
+        if not text:
+            continue
 
-        text = (
-            f'{btn["icon"]} {btn["text"]}'
-            if btn["icon"]
-            else btn["text"]
-        )
-
-        rows[btn["row"]].append({
+        rows[_button_row(btn)].append({
             "text": text,
-            "col": btn["col"]
+            "col": _button_col(btn),
         })
 
     keyboard = []
 
     for row in sorted(rows.keys()):
-
-        row_buttons = sorted(
-            rows[row],
-            key=lambda x: x["col"]
-        )
-
-        keyboard.append([
-            b["text"]
-            for b in row_buttons
-        ])
+        row_buttons = sorted(rows[row], key=lambda item: item["col"])
+        keyboard.append([button["text"] for button in row_buttons])
 
     return {
         "keyboard": keyboard,
-        "resize_keyboard": True
+        "resize_keyboard": True,
+        "one_time_keyboard": False,
     }
 
 
@@ -132,13 +118,9 @@ def build_reply_keyboard(buttons):
 # =========================================================
 def build_keyboard(buttons, keyboard_type="inline"):
 
-    keyboard_type = str(keyboard_type).strip().lower()
-
-    if keyboard_type == "inline":
-        return build_inline_keyboard(buttons)
+    keyboard_type = str(keyboard_type or "inline").strip().lower()
 
     if keyboard_type == "reply":
         return build_reply_keyboard(buttons)
 
-    # fallback
     return build_inline_keyboard(buttons)
