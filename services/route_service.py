@@ -17,6 +17,7 @@ class RouteService:
                 SELECT route_type, route_value
                 FROM baleh.routes
                 WHERE callback_data = ?
+                  AND ISNULL(is_active, 1) = 1
             """, (callback_data,))
 
             row = cur.fetchone()
