@@ -1,4 +1,6 @@
 from services.menu_service import MenuService
+from services.action_service import ActionService
+from services.route_service import RouteService
 
 
 class CallbackRouter:
@@ -16,25 +18,35 @@ class CallbackRouter:
         if not action:
             return
 
-        # MENU NAVIGATION
+        # CALENDAR NAVIGATION
+        if action.startswith("CAL:") or action.startswith("CALSELECT:"):
+            if ActionService.handle_calendar_navigation(self.bot, ctx):
+                return
+
+        # MENU NAVIGATION (prefix mode)
         if action.startswith("MENU:"):
             value = action.split(":", 1)[1]
 
             self._handle_menu(value, ctx)
             return
 
-        # WORKFLOW
+        # WORKFLOW (prefix mode)
         if action.startswith("WF:"):
             value = action.split(":", 1)[1]
 
             self._handle_workflow(value, ctx)
             return
 
-        # NORMAL ROUTE
-        self._handle_action(action, ctx)
+        # DATABASE ROUTE
+        route = RouteService.resolve_details(action)
+        if not route:
+            self._handle_action(action, ctx)
+            return
+
+        self._handle_route(route, action, ctx)
 
     # ==========================================
-    # MENU HANDLER (FIXED)
+    # MENU HANDLER
     # ==========================================
     def _handle_menu(self, value, ctx):
 
@@ -58,6 +70,39 @@ class CallbackRouter:
         )
 
     # ==========================================
+    # DB ROUTE HANDLER
+    # ==========================================
+    def _handle_route(self, route, action, ctx):
+
+        route_type = str(route.get("route_type") or "action").lower()
+        route_value = str(route.get("route_value") or "")
+        route_config = route.get("route_config")
+
+        if ActionService.handle(
+            self.bot,
+            ctx,
+            action,
+            route_type,
+            route_value,
+            route_config,
+        ):
+            return
+
+        if route_type == "menu":
+            self._handle_menu(route_value, ctx)
+            return
+
+        if route_type == "workflow":
+            self._handle_workflow(route_value, ctx)
+            return
+
+        if route_type == "message":
+            self.bot.send_message(ctx.chat_id, route_value)
+            return
+
+        self._handle_action(route_value or action, ctx)
+
+    # ==========================================
     # NORMAL ACTION ROUTER
     # ==========================================
     def _handle_action(self, action, ctx):
@@ -71,7 +116,24 @@ class CallbackRouter:
 
             return
 
-        # ⚠️ fix: keyboard undefined bug
+        if action == "buy_plan":
+
+            self.bot.send_message(
+                ctx.chat_id,
+                "💳 خرید اشتراک"
+            )
+
+            return
+
+        if action == "support":
+
+            self.bot.send_message(
+                ctx.chat_id,
+                "📞 پشتیبانی"
+            )
+
+            return
+
         self.bot.send_message(
             ctx.chat_id,
             f"Unknown action: {action}"
