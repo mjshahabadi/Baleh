@@ -80,6 +80,7 @@ def init_db():
             callback_data NVARCHAR(300) NOT NULL UNIQUE,
             route_type NVARCHAR(50) NOT NULL,
             route_value NVARCHAR(500) NOT NULL,
+            route_config NVARCHAR(MAX) NULL,
             is_active BIT NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL DEFAULT GETDATE(),
             updated_at DATETIME NULL
@@ -94,6 +95,11 @@ def init_db():
         cur.execute("""
         IF COL_LENGTH('baleh.bot_buttons', 'is_active') IS NULL
             ALTER TABLE baleh.bot_buttons ADD is_active BIT NOT NULL CONSTRAINT DF_baleh_bot_buttons_is_active DEFAULT 1
+        """)
+
+        cur.execute("""
+        IF COL_LENGTH('baleh.routes', 'route_config') IS NULL
+            ALTER TABLE baleh.routes ADD route_config NVARCHAR(MAX) NULL
         """)
 
         cur.execute("""
@@ -120,6 +126,17 @@ def init_db():
         """)
 
         cur.execute("""
+        IF NOT EXISTS (
+            SELECT 1 FROM baleh.bot_buttons
+            WHERE menu_name = 'main_menu' AND callback_data = 'leave_daily_calendar'
+        )
+            INSERT INTO baleh.bot_buttons
+                (menu_name, button_text, icon, callback_data, row_index, col_index, row_align, is_active)
+            VALUES
+                ('main_menu', N'ثبت مرخصی روزانه', N'📅', 'leave_daily_calendar', 1, 1, 'right', 1)
+        """)
+
+        cur.execute("""
         IF NOT EXISTS (SELECT 1 FROM baleh.routes WHERE callback_data = 'buy_plan')
             INSERT INTO baleh.routes (callback_data, route_type, route_value, is_active)
             VALUES ('buy_plan', 'message', N'💳 خرید اشتراک', 1)
@@ -135,6 +152,18 @@ def init_db():
         IF NOT EXISTS (SELECT 1 FROM baleh.routes WHERE callback_data = 'support')
             INSERT INTO baleh.routes (callback_data, route_type, route_value, is_active)
             VALUES ('support', 'message', N'📞 پشتیبانی', 1)
+        """)
+
+        cur.execute("""
+        IF NOT EXISTS (SELECT 1 FROM baleh.routes WHERE callback_data = 'leave_daily_calendar')
+            INSERT INTO baleh.routes (callback_data, route_type, route_value, route_config, is_active)
+            VALUES (
+                'leave_daily_calendar',
+                'calendar',
+                N'📅 تاریخ مرخصی روزانه را انتخاب کنید:',
+                N'{"calendar":"jalali","year":1405,"month":1,"min_year":1405,"max_year":1405,"week_start":"sat","selected_message":"✅ تاریخ مرخصی روزانه انتخاب شد: {date}"}',
+                1
+            )
         """)
 
         conn.commit()

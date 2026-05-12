@@ -1,4 +1,5 @@
 from services.menu_service import MenuService
+from services.action_service import ActionService
 from services.route_service import RouteService
 
 
@@ -17,6 +18,11 @@ class CallbackRouter:
         if not action:
             return
 
+        # CALENDAR NAVIGATION
+        if action.startswith("CAL:") or action.startswith("CALSELECT:"):
+            if ActionService.handle_calendar_navigation(self.bot, ctx):
+                return
+
         # MENU NAVIGATION (prefix mode)
         if action.startswith("MENU:"):
             value = action.split(":", 1)[1]
@@ -32,6 +38,12 @@ class CallbackRouter:
             return
 
         # DATABASE ROUTE
+        route = RouteService.resolve_details(action)
+        if not route:
+            self._handle_action(action, ctx)
+            return
+
+        self._handle_route(route, action, ctx)
         route_type, route_value = RouteService.resolve(action)
         self._handle_route(route_type, route_value, action, ctx)
 
@@ -62,6 +74,21 @@ class CallbackRouter:
     # ==========================================
     # DB ROUTE HANDLER
     # ==========================================
+    def _handle_route(self, route, action, ctx):
+
+        route_type = str(route.get("route_type") or "action").lower()
+        route_value = str(route.get("route_value") or "")
+        route_config = route.get("route_config")
+
+        if ActionService.handle(
+            self.bot,
+            ctx,
+            action,
+            route_type,
+            route_value,
+            route_config,
+        ):
+            return
     def _handle_route(self, route_type, route_value, action, ctx):
 
         route_type = str(route_type or "action").lower()
