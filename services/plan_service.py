@@ -1,5 +1,6 @@
 from db.database import db_conn
 
+
 class PlanService:
 
     @staticmethod
@@ -7,9 +8,10 @@ class PlanService:
         with db_conn() as conn:
             cur = conn.cursor()
             cur.execute("""
-                SELECT Id, Name, Price, DurationDays
+                SELECT Id, title, Price, duration_days
                 FROM baleh.Plans
-                WHERE IsActive = 1
+                WHERE ISNULL(IsActive, 1) = 1
+                ORDER BY Id
             """)
 
             rows = cur.fetchall()

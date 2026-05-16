@@ -8,7 +8,7 @@ from routes.webhook import webhook_bp
 
 
 logging.basicConfig(level=logging.DEBUG)
-#init_db()
+init_db()
 
 app = Flask(__name__)
 app.debug = True
