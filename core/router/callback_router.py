@@ -44,6 +44,8 @@ class CallbackRouter:
             return
 
         self._handle_route(route, action, ctx)
+        route_type, route_value = RouteService.resolve(action)
+        self._handle_route(route_type, route_value, action, ctx)
 
     # ==========================================
     # MENU HANDLER
@@ -92,6 +94,7 @@ class CallbackRouter:
 
         if ctx is None:
             raise ValueError("Callback context is required for route handling")
+    def _handle_route(self, route, action, ctx):
 
         route_type = str(route.get("route_type") or "action").lower()
         route_value = str(route.get("route_value") or "")
@@ -106,6 +109,10 @@ class CallbackRouter:
             route_config,
         ):
             return
+    def _handle_route(self, route_type, route_value, action, ctx):
+
+        route_type = str(route_type or "action").lower()
+        route_value = str(route_value or "")
 
         if route_type == "menu":
             self._handle_menu(route_value, ctx)
