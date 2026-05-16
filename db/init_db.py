@@ -91,6 +91,52 @@ def init_db():
         """)
 
         _execute(cur, """
+        IF OBJECT_ID('baleh.menus', 'U') IS NULL
+        CREATE TABLE baleh.menus (
+            id INT IDENTITY(1,1) PRIMARY KEY,
+            menu_name NVARCHAR(100) NOT NULL UNIQUE,
+            keyboard_type NVARCHAR(20) NOT NULL DEFAULT 'inline',
+            title NVARCHAR(300) NULL,
+            parent_menu NVARCHAR(100) NULL,
+            sort_order INT NULL,
+            is_active BIT NOT NULL DEFAULT 1,
+            created_at DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
+            updated_at DATETIME2(7) NULL
+        )
+        """)
+
+        _execute(cur, """
+        IF OBJECT_ID('baleh.bot_buttons', 'U') IS NULL
+        CREATE TABLE baleh.bot_buttons (
+            id INT IDENTITY(1,1) PRIMARY KEY,
+            menu_name NVARCHAR(100) NULL,
+            button_text NVARCHAR(200) NULL,
+            icon NVARCHAR(50) NULL,
+            callback_data NVARCHAR(100) NULL,
+            row_index INT NULL,
+            col_index INT NULL,
+            row_align NVARCHAR(50) NULL,
+            is_active BIT NOT NULL DEFAULT 1,
+            created_at DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
+            updated_at DATETIME2(7) NULL
+        )
+        """)
+
+        _execute(cur, """
+        IF OBJECT_ID('baleh.routes', 'U') IS NULL
+        CREATE TABLE baleh.routes (
+            id INT IDENTITY(1,1) PRIMARY KEY,
+            callback_data NVARCHAR(100) NULL UNIQUE,
+            route_type NVARCHAR(50) NULL,
+            route_value NVARCHAR(500) NULL,
+            is_active BIT NOT NULL DEFAULT 1,
+            route_config NVARCHAR(MAX) NULL,
+            created_at DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
+            updated_at DATETIME2(7) NULL
+        )
+        """)
+
+        _execute(cur, """
         IF OBJECT_ID('baleh.Plans', 'U') IS NULL
         CREATE TABLE baleh.Plans (
             Id INT IDENTITY(1,1) PRIMARY KEY,
@@ -123,6 +169,29 @@ def init_db():
             Amount BIGINT NULL,
             Status NVARCHAR(50) NULL,
             CreatedAt DATETIME2(7) NULL DEFAULT SYSDATETIME()
+        )
+        """)
+
+        _execute(cur, """
+        IF OBJECT_ID('baleh.workflows', 'U') IS NULL
+        CREATE TABLE baleh.workflows (
+            id INT IDENTITY(1,1) PRIMARY KEY,
+            name NVARCHAR(100) NULL,
+            code NVARCHAR(50) NULL UNIQUE
+        )
+        """)
+
+        _execute(cur, """
+        IF OBJECT_ID('baleh.workflow_steps', 'U') IS NULL
+        CREATE TABLE baleh.workflow_steps (
+            id INT IDENTITY(1,1) PRIMARY KEY,
+            workflow_id INT NULL,
+            step_code NVARCHAR(50) NULL,
+            step_type NVARCHAR(20) NULL,
+            message NVARCHAR(MAX) NULL,
+            next_step NVARCHAR(50) NULL,
+            field_name NVARCHAR(50) NULL,
+            is_start BIT NULL DEFAULT 0
         )
         """)
 

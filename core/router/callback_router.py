@@ -74,6 +74,26 @@ class CallbackRouter:
     # ==========================================
     # DB ROUTE HANDLER
     # ==========================================
+    def _handle_route(self, route, action=None, ctx=None, legacy_ctx=None):
+        """Handle a resolved DB route.
+
+        The router previously used the signature
+        ``_handle_route(route_type, route_value, action, ctx)``. Keeping this
+        method tolerant of both call shapes prevents TypeError failures when a
+        stale caller or older code path still passes the legacy argument list.
+        """
+
+        if legacy_ctx is not None:
+            route = {
+                "route_type": route,
+                "route_value": action,
+                "route_config": None,
+            }
+            action = ctx
+            ctx = legacy_ctx
+
+        if ctx is None:
+            raise ValueError("Callback context is required for route handling")
     def _handle_route(self, route, action, ctx):
 
         route_type = str(route.get("route_type") or "action").lower()
