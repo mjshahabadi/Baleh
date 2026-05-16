@@ -63,3 +63,7 @@ With this configuration, pressing **ثبت مرخصی روزانه** shows a Jal
 | `max_year` | `1405` | Last year allowed by navigation. |
 | `week_start` | `sat` | First day of the week. Use `sat` for Saturday. |
 | `selected_message` | `✅ تاریخ انتخاب شد: {date}` | Message sent after date selection. |
+
+## Database schema source of truth
+
+The SQL Server schema and seed script is maintained in `db/schema.sql`. If a table is added/removed, a field is added/removed, or a datatype changes, update `db/schema.sql` in the same code change and run it against the target SQL Server database.
