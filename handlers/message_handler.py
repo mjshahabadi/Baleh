@@ -15,13 +15,24 @@ from services.workflow_service import handle_workflow
 # =========================================================
 def send_menu(bot, chat_id, menu_name, text=None):
 
-    buttons, keyboard_type = UIService.get_menu(menu_name)
+    menu_payload = UIService.get_menu(menu_name)
+
+    if not menu_payload:
+        bot.send_message(
+            chat_id,
+            "❌ منوی درخواستی پیدا نشد یا غیرفعال است."
+        )
+        return
+
+    menu = menu_payload["menu"]
+    buttons = menu_payload["buttons"]
+    keyboard_type = menu.get("keyboard_type", "inline")
 
     keyboard = build_keyboard(buttons, keyboard_type)
 
     bot.send_message(
         chat_id,
-        text or "📋 منو",
+        text or menu.get("title") or "📋 منو",
         reply_markup=keyboard
     )
 
@@ -171,7 +182,7 @@ def handle_message(ctx, bot):
 
         return
     # ==========================================
-    # REPLY MENU HANDLER (FIX)
+    # REPLY MENU HANDLER
     # ==========================================
     reply_menu = UIService.get_menu_by_text(text)
 
